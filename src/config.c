@@ -55,6 +55,17 @@ static void nm_config_push_menu_item(nm_config_t **cfg, nm_menu_item_t *it) {
     *cfg = tmp;
 }
 
+static void nm_config_push_action(nm_menu_item_t *it, nm_menu_action_t *act) {
+    nm_menu_action_t *cur = NULL;
+    act->next = NULL;
+    if (!it->action) it->action = act;
+    else {
+        cur = it->action;
+        while (cur->next) cur = cur->next;
+        cur->next = act; 
+    }
+}
+
 nm_config_t *nm_config_parse(char **err_out) {
     #define NM_ERR_RET NULL
     NM_LOG("config: reading config dir %s", NM_CONFIG_DIR);
@@ -211,7 +222,16 @@ void nm_config_free(nm_config_t *cfg) {
 
         if (cfg->type == NM_CONFIG_TYPE_MENU_ITEM) {
             free(cfg->value.menu_item->lbl);
-            free(cfg->value.menu_item->arg);
+            if (cfg->value.menu_item->action) {
+                nm_menu_action_t *cur = cfg->value.menu_item->action;
+                nm_menu_action_t *tmp;
+                while (cur) {
+                    tmp = cur;
+                    cur = cur->next;
+                    free(tmp->arg);
+                    free(tmp);
+                }
+            }
             free(cfg->value.menu_item);
         }
         free(cfg);

@@ -89,11 +89,13 @@ extern "C" MenuTextItem* _nm_menu_hook(void* _this, QMenu* menu, QString const& 
         QObject::connect(action, &QAction::triggered, std::function<void(bool)>([it](bool){
             NM_LOG("Item '%s' pressed...", it->lbl);
             char *err;
-            if (it->act(it->arg, &err) && err) {
-                NM_LOG("Got error: '%s', displaying...", err);
-                ConfirmationDialogFactory_showOKDialog(QString::fromUtf8(it->lbl), QString::fromUtf8(err));
-                free(err);
-                return;
+            for (; it->action; it->action->next) {
+                if (it->action->act(it->action->arg, &err) && err) {
+                    NM_LOG("Got error: '%s', displaying...", err);
+                    ConfirmationDialogFactory_showOKDialog(QString::fromUtf8(it->lbl), QString::fromUtf8(err));
+                    free(err);
+                    return;
+                }
             }
             NM_LOG("Success!");
         }));
