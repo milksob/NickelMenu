@@ -12,7 +12,7 @@
 # starting with # for a comment, or in the the following format:
 #
 #   menu_item:<location>:<label>:<action>:<arg>
-#     Adds a menu item (spaces around fields are ignored). OR:
+#     Adds a menu item (spaces around fields are ignored).
 #   chain:<action>:<arg>
 #     Adds an action to the chain that began with the preceeding menu_item.
 #     Actions are performed in the order they are written in the config order.
