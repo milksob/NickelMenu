@@ -157,15 +157,15 @@ nm_config_t *nm_config_parse(char **err_out) {
                 nm_menu_action_t *action = calloc(1, sizeof(nm_menu_action_t));
                 // type: chain - field 2: action
                 char *c_act = strtrim(strsep(&cur, ":"));
-                if (!c_act) RETERR("file %s: line %d: field 4: expected action, got end of line", fn, line_n);
+                if (!c_act) RETERR("file %s: line %d: field 2: expected action, got end of line", fn, line_n);
                 #define X(name) else if (!strcmp(c_act, #name)) action->act = NM_ACTION(name);
                 NM_ACTIONS
                 #undef X
-                else RETERR("file %s: line %d: field 4: unknown action '%s'", fn, line_n, c_act);
+                else RETERR("file %s: line %d: field 2: unknown action '%s'", fn, line_n, c_act);
 
                 // type: chain - field 3: argument
                 char *c_arg = strtrim(cur);
-                if (!c_arg) RETERR("file %s: line %d: field 5: expected argument, got end of line\n", fn, line_n);
+                if (!c_arg) RETERR("file %s: line %d: field 3: expected argument, got end of line\n", fn, line_n);
                 else action->arg = strdup(c_arg);
                 nm_config_push_action(&cur_act, action);
 
