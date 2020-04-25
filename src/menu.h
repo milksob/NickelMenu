@@ -6,6 +6,8 @@ extern "C" {
 
 #include <stddef.h>
 
+#include "action.h"
+
 typedef enum {
     NM_MENU_LOCATION_MAIN_MENU   = 1,
     NM_MENU_LOCATION_READER_MENU = 2,
@@ -13,7 +15,7 @@ typedef enum {
 
 typedef struct nm_menu_action_t {
     char *arg;
-    int (*act)(const char *arg, char **out_err); // can block, must return 0 on success, nonzero with out_err set to the malloc'd error message on error
+    nm_action_fn_t act; // can block, must return 0 on success, nonzero with out_err set to the malloc'd error message on error
     struct nm_menu_action_t *next;
 } nm_menu_action_t;
 

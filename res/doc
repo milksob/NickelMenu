@@ -26,6 +26,8 @@
 #     <action>    the type of action to run, one of:
 #                   dbg_syslog     - writes a message to syslog (for testing)
 #                   dbg_error      - always returns an error (for testing)
+#                   dbg_msg        - shows a message (for testing)
+#                   dbg_toast      - shows a toast (for testing)
 #                   kfmon          - triggers a kfmon action (TODO)
 #                   nickel_setting - toggles a boolean setting
 #                   nickel_extras  - opens one of the beta features
@@ -38,9 +40,9 @@
 #                   kfmon          - TODO
 #                   nickel_setting - one of:
 #                                      invert      - toggles FeatureSettings.InvertScreen (all versions)
-#                                      screenshots - toggles FeatureSettings.Screenshots (all versions) (TODO)
+#                                      screenshots - toggles FeatureSettings.Screenshots (all versions)
 #                   nickel_extras - the mimetype of the plugin, or one of:
-#                                      web_browser (TODO)
+#                                      web_browser
 #                                      unblock_it
 #                                      sketch_pad
 #                                      solitaire
@@ -57,7 +59,7 @@
 #
 #   menu_item :main   :Show an Error  :dbg_error      :This is an error message!
 #   menu_item :main   :Do Nothing     :cmd_spawn      :sleep 60
-#   menu_item :main   :Kernel Version :cmd_output     :uname -a
+#   menu_item :main   :Kernel Version :cmd_output     :500:uname -a
 #   menu_item :main   :Sketch Pad     :nickel_extras  :Sketch Pad
 #   menu_item :reader :Invert Screen  :nickel_setting :invert
 #

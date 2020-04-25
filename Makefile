@@ -34,7 +34,7 @@ $(call pkgconf,QT5WIDGETS,Qt5Widgets)
 
 CFLAGS   ?= -Wall -Wextra -Werror
 CXXFLAGS ?= -Wall -Wextra -Werror
-LDFLAGS  ?=
+LDFLAGS  ?= -Wl,--no-undefined
 
 # temporary workaround for broken cflags in kobo-toolchain Docker image:
 QT5CORE_CFLAGS    := $(shell echo "$(QT5CORE_CFLAGS)"    | sed 's:/toolchain/arm-nickel-linux-gnueabihf/arm-nickel-linux-gnueabihf/sysroot/toolchain/arm-nickel-linux-gnueabihf/arm-nickel-linux-gnueabihf/sysroot/:/toolchain/arm-nickel-linux-gnueabihf/arm-nickel-linux-gnueabihf/sysroot/:g')
@@ -71,7 +71,7 @@ override GENERATED += KoboRoot.tgz
 src/libnm.so: override CFLAGS   += $(PTHREAD_CFLAGS) -fPIC
 src/libnm.so: override CXXFLAGS += $(PTHREAD_CFLAGS) $(QT5CORE_CFLAGS) $(QT5WIDGETS_CFLAGS) -fPIC
 src/libnm.so: override LDFLAGS  += $(PTHREAD_LIBS) $(QT5CORE_LIBS) $(QT5WIDGETS_LIBS) -ldl -Wl,-soname,libnm.so
-src/libnm.so: src/qtplugin.o src/init.o src/config.o src/dlhook.o src/failsafe.o src/menu.o src/action_c.o src/action_cc.o
+src/libnm.so: src/qtplugin.o src/init.o src/config.o src/dlhook.o src/failsafe.o src/menu.o src/action.o src/action_c.o src/action_cc.o
 
 override LIBRARIES += src/libnm.so
 override MOCS      += src/qtplugin.moc
@@ -84,7 +84,7 @@ define rpatw =
 endef
 
 $(LIBRARIES): src/%.so:
-	$(CC) -shared -o $@ $^ $(LDFLAGS)
+	$(CXX) -shared -o $@ $^ $(LDFLAGS)
 $(MOCS): %.moc: %.h
 	$(MOC) $< -o $@
 $(patsubst %.moc,%.o,$(MOCS)): %.o: %.moc

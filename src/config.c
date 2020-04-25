@@ -10,8 +10,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "action_c.h"
-#include "action_cc.h"
+#include "action.h"
 #include "config.h"
 #include "menu.h"
 #include "util.h"
@@ -144,14 +143,9 @@ nm_config_t *nm_config_parse(char **err_out) {
                 // type: menu_item - field 4: action
                 char *c_act = strtrim(strsep(&cur, ":"));
                 if (!c_act) RETERR("file %s: line %d: field 4: expected action, got end of line", fn, line_n);
-                else if (!strcmp(c_act, "dbg_syslog"))     action->act = nm_action_dbgsyslog;
-                else if (!strcmp(c_act, "dbg_error"))      action->act = nm_action_dbgerror;
-                else if (!strcmp(c_act, "kfmon"))          action->act = nm_action_kfmon;
-                else if (!strcmp(c_act, "nickel_setting")) action->act = nm_action_nickelsetting;
-                else if (!strcmp(c_act, "nickel_extras"))  action->act = nm_action_nickelextras;
-                else if (!strcmp(c_act, "nickel_misc"))    action->act = nm_action_nickelmisc;
-                else if (!strcmp(c_act, "cmd_spawn"))      action->act = nm_action_cmdspawn;
-                else if (!strcmp(c_act, "cmd_output"))     action->act = nm_action_cmdoutput;
+                #define X(name) else if (!strcmp(c_act, #name)) action->act = NM_ACTION(name);
+                NM_ACTIONS
+                #undef X
                 else RETERR("file %s: line %d: field 4: unknown action '%s'", fn, line_n, c_act);
 
                 // type: menu_item - field 5: argument
@@ -166,14 +160,9 @@ nm_config_t *nm_config_parse(char **err_out) {
                 // type: chain - field 2: action
                 char *c_act = strtrim(strsep(&cur, ":"));
                 if (!c_act) RETERR("file %s: line %d: field 4: expected action, got end of line", fn, line_n);
-                else if (!strcmp(c_act, "dbg_syslog"))     action->act = nm_action_dbgsyslog;
-                else if (!strcmp(c_act, "dbg_error"))      action->act = nm_action_dbgerror;
-                else if (!strcmp(c_act, "kfmon"))          action->act = nm_action_kfmon;
-                else if (!strcmp(c_act, "nickel_setting")) action->act = nm_action_nickelsetting;
-                else if (!strcmp(c_act, "nickel_extras"))  action->act = nm_action_nickelextras;
-                else if (!strcmp(c_act, "nickel_misc"))    action->act = nm_action_nickelmisc;
-                else if (!strcmp(c_act, "cmd_spawn"))      action->act = nm_action_cmdspawn;
-                else if (!strcmp(c_act, "cmd_output"))     action->act = nm_action_cmdoutput;
+                #define X(name) else if (!strcmp(c_act, #name)) action->act = NM_ACTION(name);
+                NM_ACTIONS
+                #undef X
                 else RETERR("file %s: line %d: field 4: unknown action '%s'", fn, line_n, c_act);
 
                 // type: chain - field 3: argument
@@ -204,8 +193,7 @@ nm_config_t *nm_config_parse(char **err_out) {
         it->loc = NM_MENU_LOCATION_MAIN_MENU;
         it->lbl = strdup("NickelMenu");
         action->arg = strdup("See KOBOeReader/.add/nm/doc for instructions on how to customize this menu.");
-        action->act = nm_action_dbgerror;
-        nm_config_push_action(it, action);
+        action->act = NM_ACTION(dbg_toast);
         nm_config_push_menu_item(&cfg, it);
     }
 
@@ -220,7 +208,7 @@ nm_config_t *nm_config_parse(char **err_out) {
         }
     }
     NM_ASSERT(mm <= NM_CONFIG_MAX_MENU_ITEMS_PER_MENU, "too many menu items in main menu (> %d)", NM_CONFIG_MAX_MENU_ITEMS_PER_MENU);
-    NM_ASSERT(rm <= NM_CONFIG_MAX_MENU_ITEMS_PER_MENU, "too many menu items in main menu (> %d)", NM_CONFIG_MAX_MENU_ITEMS_PER_MENU);
+    NM_ASSERT(rm <= NM_CONFIG_MAX_MENU_ITEMS_PER_MENU, "too many menu items in reader menu (> %d)", NM_CONFIG_MAX_MENU_ITEMS_PER_MENU);
 
     // return the head of the list
     NM_RETURN_OK(cfg);
