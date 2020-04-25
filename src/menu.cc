@@ -103,6 +103,7 @@ extern "C" MenuTextItem* _nm_menu_hook(void* _this, QMenu* menu, QString const& 
             NM_LOG("Item '%s' pressed...", it->lbl);
             char *err;
             for (nm_menu_action_t *cur = it->action; cur; cur = cur->next) {
+                NM_LOG("running action %p with argument %s : ", cur->act, cur->arg);
                 nm_action_result_t *res = cur->act(cur->arg, &err);
                 if (err) {
                     NM_LOG("Got error: '%s', displaying...", err);
