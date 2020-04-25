@@ -55,12 +55,9 @@ static void nm_config_push_menu_item(nm_config_t **cfg, nm_menu_item_t *it) {
 }
 
 static void nm_config_push_action(nm_menu_action_t **cur, nm_menu_action_t *act) {
-    nm_menu_action_t *tmp = *cur;
-    if(!tmp) *cur = act;
-    else {
-        tmp->next = act;
-        *cur = tmp->next;
-    }
+    if (*cur)
+        (*cur)->next = act;
+    *cur = act;
 }
 
 nm_config_t *nm_config_parse(char **err_out) {
