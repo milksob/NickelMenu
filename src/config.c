@@ -54,14 +54,12 @@ static void nm_config_push_menu_item(nm_config_t **cfg, nm_menu_item_t *it) {
     *cfg = tmp;
 }
 
-static void nm_config_push_action(nm_menu_item_t *it, nm_menu_action_t *act) {
-    nm_menu_action_t *cur = NULL;
-    act->next = NULL;
-    if (!it->action) it->action = act;
+static void nm_config_push_action(nm_menu_action_t **cur, nm_menu_action_t *act) {
+    nm_menu_action_t *tmp = *cur;
+    if(!tmp) *cur = act;
     else {
-        cur = it->action;
-        while (cur->next) cur = cur->next;
-        cur->next = act; 
+        tmp->next = act;
+        *cur = tmp->next;
     }
 }
 
@@ -113,6 +111,7 @@ nm_config_t *nm_config_parse(char **err_out) {
         size_t line_bufsz = 0;
 
         nm_menu_item_t *it = NULL;
+        nm_menu_action_t *cur_act = NULL;
         while ((line_sz = getline(&line, &line_bufsz, cfgfile)) != -1) {
             line_n++;
 
@@ -127,7 +126,7 @@ nm_config_t *nm_config_parse(char **err_out) {
                 if (it) nm_config_push_menu_item(&cfg, it);
                 // type: menu_item
                 it = calloc(1, sizeof(nm_menu_item_t));
-                nm_menu_action_t *action = calloc(1, sizeof(nm_menu_action_t));
+                cur_act = NULL;
                 // type: menu_item - field 2: location
                 char *c_loc = strtrim(strsep(&cur, ":"));
                 if (!c_loc) RETERR("file %s: line %d: field 2: expected location, got end of line", fn, line_n);
@@ -140,6 +139,7 @@ nm_config_t *nm_config_parse(char **err_out) {
                 if (!c_lbl) RETERR("file %s: line %d: field 3: expected label, got end of line", fn, line_n);
                 else it->lbl = strdup(c_lbl);
 
+                nm_menu_action_t *action = calloc(1, sizeof(nm_menu_action_t));
                 // type: menu_item - field 4: action
                 char *c_act = strtrim(strsep(&cur, ":"));
                 if (!c_act) RETERR("file %s: line %d: field 4: expected action, got end of line", fn, line_n);
@@ -152,7 +152,8 @@ nm_config_t *nm_config_parse(char **err_out) {
                 char *c_arg = strtrim(cur);
                 if (!c_arg) RETERR("file %s: line %d: field 5: expected argument, got end of line\n", fn, line_n);
                 else action->arg = strdup(c_arg);
-                nm_config_push_action(it, action);
+                nm_config_push_action(&cur_act, action);
+                it->action = cur_act;
               // field 1: type
             } else if (!strcmp(c_typ, "chain")) {
                 if (!it) RETERR("file %s: line %d: unexpected chain, no menu_item to link to", fn, line_n);
@@ -169,13 +170,14 @@ nm_config_t *nm_config_parse(char **err_out) {
                 char *c_arg = strtrim(cur);
                 if (!c_arg) RETERR("file %s: line %d: field 5: expected argument, got end of line\n", fn, line_n);
                 else action->arg = strdup(c_arg);
-                nm_config_push_action(it, action);
+                nm_config_push_action(&cur_act, action);
 
             } else RETERR("file %s: line %d: field 1: unknown type '%s'", fn, line_n, c_typ);
         }
         // Push the last menu item onto the config
         if (it) nm_config_push_menu_item(&cfg, it);
         it = NULL;
+        cur_act = NULL;
         #undef RETERR
 
         fclose(cfgfile);
@@ -200,7 +202,9 @@ nm_config_t *nm_config_parse(char **err_out) {
     size_t mm = 0, rm = 0;
     for (nm_config_t *cur = cfg; cur; cur = cur->next) {
         if (cur->type == NM_CONFIG_TYPE_MENU_ITEM) {
-            NM_LOG("cfg(NM_CONFIG_TYPE_MENU_ITEM) : %d:%s", cur->value.menu_item->loc, cur->value.menu_item->lbl);
+            for (nm_menu_action_t *cur_act = cur->value.menu_item->action; cur_act; cur_act = cur_act->next) {
+                NM_LOG("cfg(NM_CONFIG_TYPE_MENU_ITEM) : %d:%s:%p:%s", cur->value.menu_item->loc, cur->value.menu_item->lbl, cur_act->act, cur_act->arg);
+            }
             switch (cur->value.menu_item->loc){
                 case NM_MENU_LOCATION_MAIN_MENU:   mm++; break;
                 case NM_MENU_LOCATION_READER_MENU: rm++; break;
