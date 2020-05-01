@@ -40,7 +40,8 @@ void nm_action_result_free(nm_action_result_t *res);
     X(nickel_extras)  \
     X(nickel_misc)    \
     X(cmd_spawn)      \
-    X(cmd_output)
+    X(cmd_output)     \
+    X(log_viewer)
 
 #define X(name) NM_ACTION_(name);
 NM_ACTIONS
