@@ -110,6 +110,12 @@ extern "C" MenuTextItem* _nm_menu_hook(void* _this, QMenu* menu, QString const& 
                 nm_action_result_t *res = cur->act(cur->arg, &err);
                 if (err) {
                     NM_LOG("Got error: '%s', displaying...", err);
+                    if (cur->jump_on_failure > 0) {
+                        NM_LOG("Continuing on_failure. Jumping ahead %d actions", cur->jump_on_failure);
+                        cur = (cur->jump_on_failure == 2) ? cur->next : cur;
+                        free(err);
+                        continue;
+                    }
                     ConfirmationDialogFactory_showOKDialog(QString::fromUtf8(it->lbl), QString::fromUtf8(err));
                     free(err);
                     return;
@@ -132,6 +138,10 @@ extern "C" MenuTextItem* _nm_menu_hook(void* _this, QMenu* menu, QString const& 
                         break;
                     }
                     nm_action_result_free(res);
+                    if (cur->jump_on_success > 0) {
+                        NM_LOG("Continuing on_success. Jumping ahead %d actions", cur->jump_on_success);
+                        cur = (cur->jump_on_success == 2) ? cur->next : cur;
+                    }
                 } else {
                     NM_LOG("warning: you should have returned a result with type silent, not null, upon success");
                 }

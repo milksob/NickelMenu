@@ -50,6 +50,7 @@ __attribute__((constructor)) void nm_init() {
         items[0]->loc = NM_MENU_LOCATION_MAIN_MENU;
         items[0]->lbl = strdup("Config Error");
         items[0]->action = calloc(1, sizeof(nm_menu_action_t));
+        items[0]->action->jump_on_success = items[0]->action->jump_on_failure = 0;
         items[0]->action->arg = strdup(err);
         items[0]->action->act = NM_ACTION(dbg_msg);
 

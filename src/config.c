@@ -35,6 +35,13 @@ struct nm_config_t {
     nm_config_t *next;
 };
 
+// Added these to avoid multiple strcmp's in parsing
+enum nm_config_action_type {
+    NM_CONFIG_ACTION_TYPE_OTHER = 0,
+    NM_CONFIG_ACTION_TYPE_SUCCESS = 1,
+    NM_CONFIG_ACTION_TYPE_FAILURE = 2,
+};
+
 // strtrim trims ASCII whitespace in-place (i.e. don't give it a string literal)
 // from the left/right of the string.
 static char *strtrim(char *s){
@@ -55,8 +62,11 @@ static void nm_config_push_menu_item(nm_config_t **cfg, nm_menu_item_t *it) {
 }
 
 static void nm_config_push_action(nm_menu_action_t **cur, nm_menu_action_t *act) {
-    if (*cur)
+    act->prev = NULL;
+    if (*cur) {
+        act->prev = *cur;
         (*cur)->next = act;
+    }
     *cur = act;
 }
 
@@ -109,6 +119,9 @@ nm_config_t *nm_config_parse(char **err_out) {
 
         nm_menu_item_t *it = NULL;
         nm_menu_action_t *cur_act = NULL;
+        bool succsess_set, failure_set;
+        succsess_set = failure_set = false;
+        int jump_count = 0;
         while ((line_sz = getline(&line, &line_bufsz, cfgfile)) != -1) {
             line_n++;
 
@@ -137,6 +150,8 @@ nm_config_t *nm_config_parse(char **err_out) {
                 else it->lbl = strdup(c_lbl);
 
                 nm_menu_action_t *action = calloc(1, sizeof(nm_menu_action_t));
+                succsess_set = failure_set = false;
+                jump_count = 0;
                 // type: menu_item - field 4: action
                 char *c_act = strtrim(strsep(&cur, ":"));
                 if (!c_act) RETERR("file %s: line %d: field 4: expected action, got end of line", fn, line_n);
@@ -151,10 +166,27 @@ nm_config_t *nm_config_parse(char **err_out) {
                 else action->arg = strdup(c_arg);
                 nm_config_push_action(&cur_act, action);
                 it->action = cur_act;
-            } else if (!strcmp(c_typ, "chain")) {
+            } else if (!strcmp(c_typ, "chain") || !strcmp(c_typ, "on_success") || !strcmp(c_typ, "on_failure")) {
                 if (!it) RETERR("file %s: line %d: unexpected chain, no menu_item to link to", fn, line_n);
                 nm_menu_action_t *action = calloc(1, sizeof(nm_menu_action_t));
-
+                enum nm_config_action_type action_type = NM_CONFIG_ACTION_TYPE_OTHER;
+                if (!strcmp(c_typ, "chain")) {
+                    succsess_set = failure_set = false;
+                    jump_count = 0;
+                } else if (!strcmp(c_typ, "on_success")) {
+                    if (succsess_set) RETERR("file %s: line %d: duplicate on_success detected", fn, line_n);
+                    action_type = NM_CONFIG_ACTION_TYPE_SUCCESS;
+                    succsess_set = true;
+                    jump_count++;
+                    NM_LOG("Adding 'on_success' action, with skip count %d", jump_count);
+                }
+                else {
+                    if (failure_set) RETERR("file %s: line %d: duplicate on_failure detected", fn, line_n);
+                    action_type = NM_CONFIG_ACTION_TYPE_FAILURE;
+                    failure_set = true;
+                    jump_count++;
+                    NM_LOG("Adding 'on_failure' action, with skip count %d", jump_count);
+                }
                 // type: chain - field 2: action
                 char *c_act = strtrim(strsep(&cur, ":"));
                 if (!c_act) RETERR("file %s: line %d: field 2: expected action, got end of line", fn, line_n);
@@ -168,6 +200,15 @@ nm_config_t *nm_config_parse(char **err_out) {
                 if (!c_arg) RETERR("file %s: line %d: field 3: expected argument, got end of line\n", fn, line_n);
                 else action->arg = strdup(c_arg);
                 nm_config_push_action(&cur_act, action);
+                nm_menu_action_t *tmp;
+                if (action_type == NM_CONFIG_ACTION_TYPE_SUCCESS || action_type == NM_CONFIG_ACTION_TYPE_FAILURE) {
+                    tmp = (jump_count == 2) ? cur_act->prev->prev : cur_act->prev;
+                    if (action_type == NM_CONFIG_ACTION_TYPE_SUCCESS) tmp->jump_on_success = jump_count;
+                    else tmp->jump_on_failure = jump_count;
+                    cur_act->jump_on_failure = 0;
+                    cur_act->jump_on_success = 1;
+                    if (jump_count == 2) cur_act->prev->jump_on_success = 2;
+                }
             } else RETERR("file %s: line %d: field 1: unknown type '%s'", fn, line_n, c_typ);
         }
         // Push the last menu item onto the config

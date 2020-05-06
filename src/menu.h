@@ -14,8 +14,11 @@ typedef enum {
 } nm_menu_location_t;
 
 typedef struct nm_menu_action_t {
+    int jump_on_success;
+    int jump_on_failure;
     char *arg;
     nm_action_fn_t act; // can block, must return 0 on success, nonzero with out_err set to the malloc'd error message on error
+    struct nm_menu_action_t *prev;
     struct nm_menu_action_t *next;
 } nm_menu_action_t;
 
