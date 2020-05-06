@@ -61,6 +61,12 @@
 #     Actions are performed in the order they are written.
 #     Each chain entry MUST follow the menu_item it is attached to. Another
 #     menu_item marks the start of the next chain.
+#   
+#   on_success:<action>:<arg>
+#   on_failure:<action>:<arg>
+#     Adds a conditional action that is triggered when the preceeding chain or menu_item fails or succeeds.
+#     At most, one of each is allowed, and only one will be executed. If the on_success/on_failure succeeds,
+#     the next action in the chain will be triggered as normal.
 #
 # For example, you might have a configuration file in KOBOeReader/.adds/nm/mystuff like:
 #
